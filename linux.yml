@@ -1,0 +1,170 @@
+---
+- hosts: case1
+  tasks:
+  - name: Stop_and_disable_firewalld.
+    service:
+       name: firewalld
+       state: stopped
+       enabled: False
+  - name: copy_nat_to_web
+    copy:
+       src: ./nat.nft
+       dest: /etc/nftables/nat.nft
+    when: inventory_hostname == "web"
+  - name: copy_includenat_to_web
+    copy:
+       src: ./nftables.conf
+       dest: /etc/sysconfig/nftables.conf
+    when: inventory_hostname == "web"
+  - name: enable_nftables
+    systemd:
+      name: nftables
+      enabled: yes
+      state: started 
+    when: inventory_hostname == "web"
+#  - name: disable_selinux_web
+#    copy:
+#       src: ./config
+#       dest: /etc/selinux/config
+#    when: inventory_hostname == "web"
+#  - name: disable_selinux_web
+#    shell: setenforce 0
+#    when: inventory_hostname == "web"
+  - name: Disable_SELinux
+    ansible.posix.selinux:
+      state: disabled
+    when: inventory_hostname == "web"
+
+  - name: install_yum_utils_app
+    yum:
+      name: yum-utils
+      state: latest
+    when: inventory_hostname == "app"
+
+  - name: Install_device-mapper-persistent-data
+    yum:
+      name: device-mapper-persistent-data
+      state: latest
+    when: inventory_hostname == "app"
+
+  - name: Install_lvm2
+    yum:
+        name: lvm2
+        state: latest
+    when: inventory_hostname == "app"
+
+  - name: Add_Docker_repo
+    get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+    when: inventory_hostname == "app"
+  
+  - name: delete_runc
+    package:
+      name: ['runc*']
+      state: absent
+      use: dnf
+    become: yes
+
+  - name: Install_Docker
+    package:
+        name: docker-ce
+        state: latest
+    when: inventory_hostname == "app"
+
+  - name: Start_Docker_service
+    service:
+        name: docker
+        state: started
+        enabled: yes
+    when: inventory_hostname == "app"
+
+  - name: copy_chrony_conf
+    copy:
+      src: ./chrony.conf
+      dest: /etc/chrony.conf
+
+  - name: restart_chrony
+    service:
+        name: chronyd
+        state: restarted
+        enabled: yes
+
+  - name: timedatectl
+    shell: timedatectl set-timezone Europe/Moscow
+  
+#  - name: directory
+#    file:
+#      path: /opt/ca
+#      state: directory
+#    when: "'web' in inventory_hostname"
+
+#  - name: Generate an OpenSSL private key.
+#    openssl_privatekey:
+#      path: /opt/ca/cakey.pem
+#    when: "'web' in inventory_hostname"
+
+#  - name: Generate an OpenSSL CSR.
+#    openssl_csr:
+#      path: /opt/ca/ca.csr
+#      privatekey_path: /opt/ca/cakey.pem
+#      common_name: "site.unakbars.ru"
+#    when: "'web' in inventory_hostname"
+#
+#  - name: Generate a Self Signed OpenSSL certificate.
+#    openssl_certificate:
+#      path: /opt/ca/cacert.pem
+#      privatekey_path: /opt/ca/cakey.pem
+#      csr_path: /opt/ca/ca.csr
+#      provider: selfsigned
+#    when: "'web' in inventory_hostname"
+  - name: copy_certs
+    copy:
+      src: ./cacert.pem
+      dest: /opt/
+    when: "'web' in inventory_hostname"
+
+  - name: copy_certs
+    copy:
+      src: ./cakey.pem
+      dest: /opt/
+    when: "'web' in inventory_hostname"
+
+  - name: install_nginx
+    yum:
+      name: nginx
+      state: latest
+    when: "'web' in inventory_hostname"
+    
+  - name: copy_task_conf_web
+    copy:
+      src: ./task.conf
+      dest: /etc/nginx/conf.d/task.conf
+    when: "'web' in inventory_hostname"
+      
+  - name: restart_nginx
+    service:
+      name: nginx
+      state: restarted
+    when: "'web' in inventory_hostname"
+
+  - name: install_docker_compose
+    get_url:
+      url: https://github.com/docker/compose/releases/download/1.25.1-rc1/docker-compose-Linux-x86_64
+      dest: /usr/local/bin/docker-compose
+      mode: 'u+x,g+x'
+    when: "'app' in inventory_hostname"
+    
+  - name: ///
+    shell: sudo chmod 777 /usr/local/bin/docker-compose
+    when: "'app' in inventory_hostname"
+    
+  - name: copy_compose_file_app
+    copy:
+      src: ./docker-compose.yml
+      dest: /root/docker-compose.yml
+    when: "'app' in inventory_hostname"
+  
+  - name: docker_compose
+    shell: docker-compose up -d --build
+    when: "'app' in inventory_hostname"
