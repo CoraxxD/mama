@@ -6,6 +6,14 @@
        name: firewalld
        state: stopped
        enabled: False
+  - name: copy_sysctl_conf
+    copy:
+      src: ./sysctl.conf
+      dest: /etc/sysctl.conf
+    when: inventory_hostname == "web"
+  - name: sysctl-p
+    shell: sysctl -p
+    when: inventory_hostname == "web"
   - name: copy_nat_to_web
     copy:
        src: ./nat.nft
