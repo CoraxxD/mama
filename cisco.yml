@@ -48,14 +48,14 @@
     ios_config:
      parents: "ip access-list standard NAT"
      lines:
-       - permit 10.10.20.0 0.0.0.255
+       - permit 10.10.10.0 0.0.0.255
     when: inventory_hostname == "left.pod" 
 
   - name: access list standard right
     ios_config:
      parents: "ip access-list standard NAT"
      lines:
-       - permit 10.10.10.0 0.0.0.255
+       - permit 10.10.20.0 0.0.0.255
     when: inventory_hostname == "right.pod" 
 
   - name: nat_overload

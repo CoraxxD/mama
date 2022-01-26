@@ -1,5 +1,6 @@
 ---
 - hosts: case1
+  gather_facts: no
   tasks:
   - name: Stop_and_disable_firewalld.
     service:
@@ -7,29 +8,34 @@
        state: stopped
        enabled: False
     when: inventory_hostname == "web"
+
   - name: copy_sysctl_conf
     copy:
       src: ./sysctl.conf
       dest: /etc/sysctl.conf
     when: inventory_hostname == "web"
+
   - name: sysctl-p
     shell: sysctl -p
     when: inventory_hostname == "web"
+
   - name: copy_nat_to_web
     copy:
        src: ./nat.nft
        dest: /etc/nftables/nat.nft
     when: inventory_hostname == "web"
+
   - name: copy_includenat_to_web
     copy:
        src: ./nftables.conf
        dest: /etc/sysconfig/nftables.conf
     when: inventory_hostname == "web"
+
   - name: enable_nftables
-    systemd:
+    service:
       name: nftables
       enabled: yes
-      state: started 
+      state: restarted 
     when: inventory_hostname == "web"
 #  - name: disable_selinux_web
 #    copy:
@@ -40,7 +46,7 @@
 #    shell: setenforce 0
 #    when: inventory_hostname == "web"
   - name: Disable_SELinux
-    ansible.posix.selinux:
+    selinux:
       state: disabled
     when: inventory_hostname == "web"
 

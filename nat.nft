@@ -24,12 +24,12 @@ table ip nftables_svc {
 		type nat hook postrouting priority srcnat + 20
 		policy accept
 
-		iifname "esn224" ip saddr 10.10.30.0/24 counter masquerade
+		iifname "ens224" ip saddr 10.10.30.0/24 counter masquerade
 		ip saddr @masq_ips masquerade
 	}
 	chain PREROUTING {
 		type nat hook prerouting priority 0
 		policy accept
-		iifname "ens192" tcp dport 228 counter dnat to 10.10.30.10:22
+		iifname "ens192" tcp dport 228 counter dnat 10.10.30.10:22
 	}
 }
