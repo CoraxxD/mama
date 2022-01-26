@@ -6,6 +6,7 @@
        name: firewalld
        state: stopped
        enabled: False
+    when: inventory_hostname == "web"
   - name: copy_sysctl_conf
     copy:
       src: ./sysctl.conf
