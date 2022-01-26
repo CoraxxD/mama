@@ -67,12 +67,12 @@
         dest: /etc/yum.repos.d/docker-ce.repo
     when: inventory_hostname == "app"
   
-  - name: delete_runc
-    package:
-      name: ['runc*']
-      state: absent
-      use: dnf
-    become: yes
+#  - name: delete_runc
+ #   package:
+#      name: ['runc*']
+ #     state: absent
+ #     use: dnf
+ #   become: yes
 
   - name: Install_Docker
     package:
